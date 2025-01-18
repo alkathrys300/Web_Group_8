@@ -4,15 +4,10 @@ include('db.php');
 
 // Kill session function
 function kill_session() {
-    // Unset all session variables
     $_SESSION = [];
-    
-    // Destroy the session cookie
     if (isset($_COOKIE[session_name()])) {
         setcookie(session_name(), '', time() - 3600, '/');
     }
-    
-    // Destroy the session
     session_destroy();
 }
 
@@ -40,36 +35,41 @@ $recentOrders = [];
 $chartData = [];
 
 try {
-    // Base WHERE clause
-    $searchWhere = "WHERE user_id = ?";
+    // Base WHERE clause for user_id
+    $searchWhere = "WHERE `order`.user_id = ?";
     $searchParams = [$user_id];
     $searchTypes = "s";
 
     if (!empty($search)) {
         switch ($searchType) {
             case 'order_id':
-                $searchWhere .= " AND order_id LIKE ?";
+                $searchWhere .= " AND `order`.order_id LIKE ?";
                 $searchParams[] = "%$search%";
                 $searchTypes .= "s";
                 break;
             case 'price':
-                $searchWhere .= " AND Order_Grand_Total = ?";
+                $searchWhere .= " AND `order`.Order_Grand_Total = ?";
                 $searchParams[] = $search;
-                $searchTypes .= "d"; // Assuming price is a decimal or float
+                $searchTypes .= "d";
                 break;
             default: // 'order_number'
-                $searchWhere .= " AND order_number LIKE ?";
+                $searchWhere .= " AND `order`.order_number LIKE ?";
                 $searchParams[] = "%$search%";
                 $searchTypes .= "s";
                 break;
         }
     }
 
-    // Total orders query
-    $totalOrdersQuery = "SELECT COUNT(*) as total_orders FROM `order` $searchWhere";
+    // Total orders query with JOIN
+    $totalOrdersQuery = "
+        SELECT COUNT(*) as total_orders
+        FROM `order`
+        INNER JOIN `user` ON `order`.user_id = `user`.user_id
+        $searchWhere
+    ";
     $stmt = $conn->prepare($totalOrdersQuery);
     if ($stmt === false) {
-        throw new Exception("Prepare failed: " . $conn->error);
+        die("Error preparing statement (totalOrdersQuery): " . $conn->error);
     }
     $stmt->bind_param($searchTypes, ...$searchParams);
     $stmt->execute();
@@ -77,11 +77,16 @@ try {
     $totalOrders = $result->fetch_assoc()['total_orders'] ?? 0;
     $stmt->close();
 
-    // Total revenue query
-    $totalRevenueQuery = "SELECT SUM(Order_Grand_Total) as total_revenue FROM `order` $searchWhere";
+    // Total revenue query with JOIN
+    $totalRevenueQuery = "
+        SELECT SUM(`order`.Order_Grand_Total) as total_revenue
+        FROM `order`
+        INNER JOIN `user` ON `order`.user_id = `user`.user_id
+        $searchWhere
+    ";
     $stmt = $conn->prepare($totalRevenueQuery);
     if ($stmt === false) {
-        throw new Exception("Prepare failed: " . $conn->error);
+        die("Error preparing statement (totalRevenueQuery): " . $conn->error);
     }
     $stmt->bind_param($searchTypes, ...$searchParams);
     $stmt->execute();
@@ -89,34 +94,49 @@ try {
     $totalRevenue = $result->fetch_assoc()['total_revenue'] ?? 0.00;
     $stmt->close();
 
-    // Recent orders query
-    $recentOrdersQuery = "SELECT * FROM `order` $searchWhere ORDER BY order_date DESC";
-    $stmt = $conn->prepare($recentOrdersQuery);
-    if ($stmt === false) {
-        throw new Exception("Prepare failed: " . $conn->error);
-    }
-    $stmt->bind_param($searchTypes, ...$searchParams);
-    $stmt->execute();
-    $recentOrdersResult = $stmt->get_result();
-    while ($row = $recentOrdersResult->fetch_assoc()) {
-        $recentOrders[] = $row;
-    }
-    $stmt->close();
+    // Recent orders query with JOIN
+$recentOrdersQuery = "
+SELECT 
+    `order`.order_id,
+    `order`.order_number,
+    `order`.order_date,
+    `order`.Order_Grand_Total,
+    `membershipcard`.Card_Number,
+    `membershipcard`.card_status
+FROM `order`
+INNER JOIN `user` ON `order`.user_id = `user`.user_id
+LEFT JOIN `membershipcard` ON `user`.user_id = `membershipcard`.user_id
+$searchWhere
+ORDER BY `order`.order_date DESC
+";
+$stmt = $conn->prepare($recentOrdersQuery);
+if ($stmt === false) {
+die("Error preparing statement (recentOrdersQuery): " . $conn->error);
+}
+$stmt->bind_param($searchTypes, ...$searchParams);
+$stmt->execute();
+$recentOrdersResult = $stmt->get_result();
+while ($row = $recentOrdersResult->fetch_assoc()) {
+$recentOrders[] = $row;
+}
+$stmt->close();
 
-    // Monthly data for charts
+    // Monthly data for charts with JOIN
     $chartDataQuery = "
         SELECT 
-            DATE_FORMAT(order_date, '%Y-%m') as month,
+            DATE_FORMAT(`order`.order_date, '%Y-%m') as month,
             COUNT(*) as order_count,
-            SUM(Order_Grand_Total) as monthly_revenue
-        FROM `order` 
-        WHERE user_id = ?
-        GROUP BY DATE_FORMAT(order_date, '%Y-%m')
+            SUM(`order`.Order_Grand_Total) as monthly_revenue
+        FROM `order`
+        INNER JOIN `user` ON `order`.user_id = `user`.user_id
+        WHERE `order`.user_id = ?
+        GROUP BY DATE_FORMAT(`order`.order_date, '%Y-%m')
         ORDER BY month DESC
-        LIMIT 6";
+        LIMIT 6
+    ";
     $stmt = $conn->prepare($chartDataQuery);
     if ($stmt === false) {
-        throw new Exception("Prepare failed: " . $conn->error);
+        die("Error preparing statement (chartDataQuery): " . $conn->error);
     }
     $stmt->bind_param("s", $user_id);
     $stmt->execute();
@@ -131,7 +151,6 @@ try {
     echo "An error occurred while fetching data. Please try again later.";
 }
 ?>
-
 
 <!DOCTYPE html>
 <html lang="en">

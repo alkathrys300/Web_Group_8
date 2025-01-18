@@ -100,7 +100,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </form>
         <br>
         <!-- Add Logout Link -->
-        <a href="?logout=true" class="logout-button">Logout</a>
     </div>
 </body>
 </html>
