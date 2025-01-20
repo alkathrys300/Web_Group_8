@@ -1,27 +1,3 @@
-<?php
-session_start();
-
-// Kill session function
-function kill_session() {
-    // Unset all session variables
-    $_SESSION = [];
-    
-    // Destroy the session cookie
-    if (isset($_COOKIE[session_name()])) {
-        setcookie(session_name(), '', time() - 3600, '/');
-    }
-    
-    // Destroy the session
-    session_destroy();
-}
-
-// Handle logout action
-if (isset($_GET['logout']) && $_GET['logout'] === 'true') {
-    kill_session();
-    header('Location: login.php');
-    exit();
-}
-?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -46,22 +22,22 @@ if (isset($_GET['logout']) && $_GET['logout'] === 'true') {
       <nav id="navmenu" class="navmenu">
         <ul>
           <li><a href="index.php">Home</a></li>
-          <li><a href="user_management.php">User Management</a></li>
-          <li><a href="Admain View Card.php">Admin View Card</a></li>
-          <li><a href="admin_approval.php">Admin Approval</a></li>
-          <li><a href="?logout=true" class="text-danger">Logout</a></li>
+          <li><a href="Dashboard.php">Dashboard</a></li>
+          <li><a href="branch_management.php">Branch Management</a></li>
+
         </ul>
         <i class="mobile-nav-toggle bi bi-list"></i>
       </nav>
+      <a class="btn-getstarted" href="Logout.php">Logout</a>
+
     </div>
   </header>
 
   <main>
+    <!-- Add your admin content here -->
     <section id="hero" class="hero section">
-      <div class="container text-center">
-        <h2>Welcome, Admin!</h2>
-        <p>Manage your tasks efficiently.</p>
-      </div>
+      <h2>Welcome, Admin!</h2>
+      <p>Manage your tasks efficiently.</p>
     </section>
   </main>
 

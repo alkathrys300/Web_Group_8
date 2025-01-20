@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -54,18 +52,17 @@
       </a>
 
       <nav id="navmenu" class="navmenu">
-    <ul>
-        <li><a href="#hero" class="active">Home</a></li>
-        <li><a href="#about">About</a></li>
-        <li><a href="#services">Services</a></li>
-        <li><a href="#team">Team</a></li>
-        <li><a href="#contact">Contact</a></li>
-        <li><a href="login.php">Login</a></li>
-        <li><a href="logout.php">Logout</a></li> <!-- Corrected Logout Link -->
-    </ul>
-    <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
-</nav>
-
+        <ul>
+          <li><a href="#hero" class="active">Home<br></a></li>
+          <li><a href="#about">About</a></li>
+          <li><a href="#services">Services</a></li>
+          <li><a href="#team">Team</a></li>   
+          <li><a href="#contact">Contact</a></li>
+          <li><a href="login.php">login</a></li> 
+          
+        </ul>
+        <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
+      </nav>
 
       <a class="btn-getstarted" href="login.php">Login</a>
 

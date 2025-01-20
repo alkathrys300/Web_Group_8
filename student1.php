@@ -17,12 +17,13 @@
     <div class="container-fluid container-xl d-flex justify-content-between align-items-center">
       <a href="index.php" class="logo">
         <h1>RapidPrint UMPSA</h1>
-        <p>Student Page</p>
+        <p>Customer Page</p>
       </a>
       <nav id="navmenu" class="navmenu">
         <ul>
           <li><a href="index.php">Home</a></li>
-          <li><a href="user_profile.php">Student profile</a></li>
+          <li><a href="user_management.php">User Management</a></li>
+          <li><a href="branch_management.php">Branch Management</a></li>
 
         </ul>
         <i class="mobile-nav-toggle bi bi-list"></i>
@@ -35,7 +36,7 @@
   <main>
     <!-- Add your admin content here -->
     <section id="hero" class="hero section">
-      <h2>Welcome, Coustomer!</h2>
+      <h2>Welcome, Customer!</h2>
       <p>Manage your tasks efficiently.</p>
     </section>
   </main>

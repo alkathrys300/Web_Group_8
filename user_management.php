@@ -1,41 +1,20 @@
 <?php
 session_start();
 
-// Kill session function
-function kill_session() {
-    // Unset all session variables
-    $_SESSION = array();
-    
-    // Destroy the session cookie
-    if (isset($_COOKIE[session_name()])) {
-        setcookie(session_name(), '', time() - 3600, '/');
-    }
-    
-    // Destroy the session
-    session_destroy();
-}
-
-// Handle logout action
-if (isset($_GET['logout']) && $_GET['logout'] === 'true') {
-    kill_session();
-    header('Location: login.php');
-    exit();
-}
-
-// Ensure user is logged in and is an admin
+// Check if user is logged in and is admin
 if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'admin') {
     header('Location: login.php');
     exit();
 }
 
 // Database connection
-$conn = new mysqli("localhost", "root", "", "rapidprint");
+$conn = new mysqli("localhost", "root", "", "print");
 
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// Add, edit, or delete users
+// Handle form submission for adding/editing users
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (isset($_POST['action'])) {
         if ($_POST['action'] == 'add') {
@@ -43,6 +22,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $name = $_POST['user_name'];
             $email = $_POST['user_email'];
             $phone = $_POST['user_phone'];
+            // Store password directly as per your login system
             $password = $_POST['user_password'];
             $student_card = '';
 
@@ -107,7 +87,15 @@ $result = $conn->query($sql);
             <h1>User Management</h1>
             <div class="user-info">
                 Welcome, <?php echo htmlspecialchars($_SESSION['user_name']); ?> (Admin)
-                <a href="?logout=true" class="logout-button">Logout</a>
+                <a href="logout.php" class="btn-logout">Logout</a>
+                <style>padding: 10px 15px;
+    background-color: #ff4d4d;
+    color: white;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: bold;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;</style>
             </div>
         </div>
         
@@ -158,7 +146,7 @@ $result = $conn->query($sql);
                         <th>Phone</th>
                         <th>Status</th>
                         <th>Actions</th>
-                    </tr> 
+                    </tr>
                 </thead>
                 <tbody>
                     <?php while($row = $result->fetch_assoc()): ?>
@@ -169,7 +157,13 @@ $result = $conn->query($sql);
                         <td><?php echo htmlspecialchars($row['User_Phone']); ?></td>
                         <td><?php echo htmlspecialchars($row['status']); ?></td>
                         <td class="actions">
-                            <button onclick="editUser('<?php echo $row['user_id']; ?>', '<?php echo htmlspecialchars($row['user_name']); ?>', '<?php echo htmlspecialchars($row['user_email']); ?>', '<?php echo htmlspecialchars($row['User_Phone']); ?>', '<?php echo htmlspecialchars($row['status']); ?>')" class="btn-edit">Edit</button>
+                            <button onclick="viewUser('<?php echo $row['user_id']; ?>')" class="btn-view">View</button>
+                            <button onclick="editUser('<?php echo $row['user_id']; ?>', 
+                                '<?php echo htmlspecialchars($row['user_name']); ?>', 
+                                '<?php echo htmlspecialchars($row['user_email']); ?>', 
+                                '<?php echo htmlspecialchars($row['User_Phone']); ?>', 
+                                '<?php echo htmlspecialchars($row['status']); ?>')" 
+                                class="btn-edit">Edit</button>
                             <form method="POST" style="display: inline;">
                                 <input type="hidden" name="action" value="delete">
                                 <input type="hidden" name="user_id" value="<?php echo $row['user_id']; ?>">
@@ -182,5 +176,70 @@ $result = $conn->query($sql);
             </table>
         </div>
     </div>
+
+    <!-- Edit User Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Edit User</h2>
+            <form method="POST">
+                <input type="hidden" name="action" value="edit">
+                <input type="hidden" name="user_id" id="edit_user_id">
+                
+                <div class="form-group">
+                    <label for="edit_user_name">Name:</label>
+                    <input type="text" id="edit_user_name" name="user_name" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit_user_email">Email:</label>
+                    <input type="email" id="edit_user_email" name="user_email" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit_user_phone">Phone:</label>
+                    <input type="tel" id="edit_user_phone" name="user_phone" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit_status">Status:</label>
+                    <select id="edit_status" name="status" required>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn-submit">Update User</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        var modal = document.getElementById("editModal");
+        var span = document.getElementsByClassName("close")[0];
+
+        span.onclick = function() {
+            modal.style.display = "none";
+        }
+
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+
+        function editUser(userId, name, email, phone, status) {
+            modal.style.display = "block";
+            document.getElementById("edit_user_id").value = userId;
+            document.getElementById("edit_user_name").value = name;
+            document.getElementById("edit_user_email").value = email;
+            document.getElementById("edit_user_phone").value = phone;
+            document.getElementById("edit_status").value = status;
+        }
+
+        function viewUser(userId) {
+            window.location.href = 'view_user.php?id=' + userId;
+        }
+    </script>
 </body>
 </html>

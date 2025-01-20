@@ -2,7 +2,7 @@
 $servername = "localhost";
 $username = "root";
 $password = "";
-$dbname = "rapidprint";
+$dbname = "print";
 
 try {
     $conn = new mysqli($servername, $username, $password, $dbname);

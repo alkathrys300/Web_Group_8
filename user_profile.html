@@ -1,0 +1,90 @@
+<?php
+session_start();
+
+// Check if user is logged in and has a valid role
+if (!isset($_SESSION['user_id']) || ($_SESSION['user_role'] !== 'Student' && $_SESSION['user_role'] !== 'admin')) {
+    header('Location: login.php');
+    exit();
+}
+
+// Database connection
+$conn = new mysqli("localhost", "root", "", "print");
+
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+
+// Get user data
+$user_id = $_SESSION['user_id'];
+$query = "SELECT * FROM user WHERE user_id = ?";
+$stmt = $conn->prepare($query);
+$stmt->bind_param('s', $user_id);
+$stmt->execute();
+$result = $stmt->get_result();
+$user = $result->fetch_assoc();
+
+// Handle form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $user_name = $_POST['user_name'];
+    $user_email = $_POST['user_email'];
+    $user_phone = $_POST['user_phone'];
+
+    // Update user information
+    $updateQuery = "UPDATE user SET user_name = ?, user_email = ?, User_Phone = ? WHERE user_id = ?";
+    $updateStmt = $conn->prepare($updateQuery);
+    $updateStmt->bind_param('ssss', $user_name, $user_email, $user_phone, $user_id);
+
+    if ($updateStmt->execute()) {
+        $_SESSION['success_message'] = "Profile updated successfully!";
+        header('Location: user_profile.php');
+        exit();
+    } else {
+        $error_message = "Failed to update profile. Please try again.";
+    }
+}
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile</title>
+    <link rel="stylesheet" type="text/css" href="../links/style.css">
+    <link rel="stylesheet" type="text/css" href="dashboardAdmin.css">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css" />
+</head>
+<body>
+    <?php include '../links/sidebarStudent.php'; ?>
+    <?php include '../links/headerStudent.php'; ?>
+
+    <div class="main_content">
+        <h3>User Profile</h3>
+        <?php if (isset($error_message)) { ?>
+            <div class="alert alert-danger"><?php echo $error_message; ?></div>
+        <?php } ?>
+        <?php if (isset($_SESSION['success_message'])) { ?>
+            <div class="alert alert-success"><?php echo $_SESSION['success_message']; unset($_SESSION['success_message']); ?></div>
+        <?php } ?>
+
+        <form action="" method="POST">
+            <div class="mb-3">
+                <label for="username" class="form-label">Username</label>
+                <input type="text" class="form-control" id="username" name="username" value="<?php echo htmlspecialchars($user['username']); ?>" required>
+            </div>
+            <div class="mb-3">
+                <label for="email" class="form-label">Email</label>
+                <input type="email" class="form-control" id="email" name="email" value="<?php echo htmlspecialchars($user['email']); ?>" required>
+            </div>
+            <div class="mb-3">
+                <label for="contactNum" class="form-label">Contact Number</label>
+                <input type="text" class="form-control" id="contactNum" name="contactNum" value="<?php echo htmlspecialchars($user['contactNum']); ?>" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Update Profile</button>
+        </form>
+    </div>
+</body>
+</html>
